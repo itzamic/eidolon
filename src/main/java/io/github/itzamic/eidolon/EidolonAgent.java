@@ -1,4 +1,4 @@
-package com.eidolon;
+package io.github.itzamic.eidolon;
 
 import java.lang.instrument.Instrumentation;
 

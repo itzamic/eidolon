@@ -1,7 +1,7 @@
-package com.eidolon.service;
+package io.github.itzamic.eidolon.service;
 
-import com.eidolon.EidolonConfig;
-import com.eidolon.model.MetricsSnapshot;
+import io.github.itzamic.eidolon.EidolonConfig;
+import io.github.itzamic.eidolon.model.MetricsSnapshot;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Singleton;

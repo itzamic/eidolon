@@ -1,7 +1,7 @@
-package com.eidolon.ws;
+package io.github.itzamic.eidolon.ws;
 
-import com.eidolon.model.MetricsSnapshot;
-import com.eidolon.service.MetricsService;
+import io.github.itzamic.eidolon.model.MetricsSnapshot;
+import io.github.itzamic.eidolon.service.MetricsService;
 import io.micronaut.json.JsonMapper;
 import io.micronaut.websocket.WebSocketSession;
 import io.micronaut.websocket.annotation.OnClose;

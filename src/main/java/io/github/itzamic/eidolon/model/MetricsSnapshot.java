@@ -1,4 +1,4 @@
-package com.eidolon.model;
+package io.github.itzamic.eidolon.model;
 
 import java.util.List;
 import java.util.Map;

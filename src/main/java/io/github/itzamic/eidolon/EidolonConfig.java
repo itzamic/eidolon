@@ -1,4 +1,4 @@
-package com.eidolon;
+package io.github.itzamic.eidolon;
 
 import java.util.Collections;
 import java.util.Objects;

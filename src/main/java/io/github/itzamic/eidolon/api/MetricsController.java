@@ -1,7 +1,7 @@
-package com.eidolon.api;
+package io.github.itzamic.eidolon.api;
 
-import com.eidolon.model.MetricsSnapshot;
-import com.eidolon.service.MetricsService;
+import io.github.itzamic.eidolon.model.MetricsSnapshot;
+import io.github.itzamic.eidolon.service.MetricsService;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

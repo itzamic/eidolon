@@ -49,8 +49,8 @@ tasks.jar {
         attributes(
             "Implementation-Title" to "Eidolon",
             "Implementation-Version" to (project.findProperty("VERSION_NAME") as String? ?: "0.1.0-SNAPSHOT"),
-            "Premain-Class" to "com.eidolon.EidolonAgent",
-            "Agent-Class" to "com.eidolon.EidolonAgent",
+            "Premain-Class" to "io.github.itzamic.eidolon.EidolonAgent",
+            "Agent-Class" to "io.github.itzamic.eidolon.EidolonAgent",
             "Can-Redefine-Classes" to "false",
             "Can-Retransform-Classes" to "false"
         )

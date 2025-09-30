@@ -1,6 +1,6 @@
-package com.eidolon.ws;
+package io.github.itzamic.eidolon.ws;
 
-import com.eidolon.service.MetricsService;
+import io.github.itzamic.eidolon.service.MetricsService;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.json.JsonMapper;

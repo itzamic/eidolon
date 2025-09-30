@@ -1,4 +1,4 @@
-package com.eidolon.ws;
+package io.github.itzamic.eidolon.ws;
 
 import io.micronaut.websocket.WebSocketSession;
 import jakarta.inject.Singleton;
