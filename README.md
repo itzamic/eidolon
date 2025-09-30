@@ -32,7 +32,7 @@ Option A: Run as Java Agent (no code changes)
 Option B: Programmatic start (one line of code)
 - Add dependency (see section 4).
 - Start the embedded server early in your main or bootstrap:
-  com.eidolon.Eidolon.startDefault();
+  io.github.itzamic.eidolon.Eidolon.startDefault();
 
 2) Endpoints
 
