@@ -79,7 +79,6 @@ tasks.jacocoTestCoverageVerification {
             classDirectories.files.map {
                 fileTree(it) {
                     exclude(
-                        "io/github/itzamic/eidolon/ws/**",
                         "io/github/itzamic/eidolon/EidolonAgent*",
                         "io/github/itzamic/eidolon/model/**",
                         "io/github/itzamic/eidolon/Eidolon*",
@@ -103,10 +102,10 @@ tasks.jacocoTestCoverageVerification {
                     value = "COVEREDRATIO"
                 minimum = "0.80".toBigDecimal()
             }
-            Branch coverage is often lower for framework-heavy code; raise later once feasible
+            // Branch coverage is often lower for framework-heavy code; raise later once feasible
             limit {
                 counter = "BRANCH"
-                value = "COVERED_RATIO"
+                value = "COVEREDRATIO"
                 minimum = "0.80".toBigDecimal()
             }
         }
