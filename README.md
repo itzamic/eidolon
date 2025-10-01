@@ -18,6 +18,8 @@ Core features:
 
 1) Getting Started
 
+Security note: Eidolon endpoints are unauthenticated and intended for local development or protected environments. Do not expose them publicly without adding authentication/proxy controls.
+
 Option A: Run as Java Agent (no code changes)
 - Build/publish the library (see section 4).
 - Add the built JAR as a -javaagent to your JVM (application server, CLI app, etc.):
@@ -106,7 +108,7 @@ You can pass configuration either via:
 - Java system properties (-D...)
 - Programmatic builder using EidolonConfig.builder() and Eidolon.start(config)
 
-Supported keys (system properties):
+Supported keys (system properties) consumed by Eidolon (library):
 - eidolon.host (default 0.0.0.0)
 - eidolon.port (default 7090)
 - eidolon.contextPath (default /eidolon)
@@ -114,6 +116,8 @@ Supported keys (system properties):
 - eidolon.websocket.interval (milliseconds, default 1000)
 - eidolon.gc.bufferSize (int, default 1024)
 - eidolon.collect.stringTable (true/false, default false)
+
+Note: The sample app additionally uses the property eidolon.disableProgrammaticStart=true to avoid double-starting when running with -javaagent. This property is specific to the sample app’s main class and is not read by the library.
 
 Optional filters (programmatic-only for now):
 - includeMemoryPools(Set<String>)
@@ -240,6 +244,9 @@ export default function Home() {
   - Add JVM arg: -javaagent:~/.m2/repository/io/github/itzamic/eidolon/0.1.0-SNAPSHOT/eidolon-0.1.0-SNAPSHOT.jar
   - Open: http://localhost:7090/eidolon/api/metrics/snapshot
   - WS: ws://localhost:7090/eidolon/ws/metrics
+
+Compatibility
+- JDK: Built and tested with JDK 21 (Gradle toolchain enforces 21 by default).
 
 --------------------------------------------------------------------------------
 
