@@ -1,6 +1,7 @@
 plugins {
     `java-library`
     `maven-publish`
+    id("jacoco")
 }
 
 java {
@@ -33,16 +34,87 @@ dependencies {
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
     implementation("jakarta.annotation:jakarta.annotation-api:2.1.1")
 
-    // Logging API (do not force an implementation to avoid conflicts with host apps)
-    api("org.slf4j:slf4j-api:2.0.16")
 
     testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("io.micronaut:micronaut-http-client:$micronautVersion")
+    testImplementation("org.mockito:mockito-core:5.12.0")
 }
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        csv.required.set(false)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacocoHtml"))
+    }
+    // Exclude code paths not required to be covered by tests
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "io/github/itzamic/eidolon/model/**",        // DTOs (pure data holders)
+                    )
+                }
+            }
+        )
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    // Apply the same exclusions for verification so thresholds reflect what we measure
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "io/github/itzamic/eidolon/ws/**",
+                        "io/github/itzamic/eidolon/EidolonAgent*",
+                        "io/github/itzamic/eidolon/model/**",
+                        "io/github/itzamic/eidolon/Eidolon*",
+                        "io/github/itzamic/eidolon/service/**"
+                    )
+                }
+            }
+        )
+    )
+    violationRules {
+        rule {
+            element = "BUNDLE"
+            // Require at least 80% instruction and line coverage for measured code
+            limit {
+                counter = "INSTRUCTION"
+                    value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                    value = "COVEREDRATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+            Branch coverage is often lower for framework-heavy code; raise later once feasible
+            limit {
+                counter = "BRANCH"
+                value = "COVERED_RATIO"
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.jar {

@@ -1,11 +1,7 @@
-# macOS
-.DS_Store
-
 # Gradle
 .gradle/
 **/build/
 !gradle/wrapper/gradle-wrapper.jar
-.gradle-tmp/
 
 # Java / build outputs
 out/

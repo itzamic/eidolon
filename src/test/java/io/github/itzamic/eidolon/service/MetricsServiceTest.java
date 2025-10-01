@@ -1,10 +1,11 @@
 package io.github.itzamic.eidolon.service;
 
-import io.github.itzamic.eidolon.EidolonConfig;
-import io.github.itzamic.eidolon.model.MetricsSnapshot;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import io.github.itzamic.eidolon.EidolonConfig;
+import io.github.itzamic.eidolon.model.MetricsSnapshot;
 
 public class MetricsServiceTest {
 
@@ -36,5 +37,31 @@ public class MetricsServiceTest {
         assertTrue(snap.classes.unloadedClassCount >= 0);
 
         assertNotNull(snap.recentGcEvents, "gc events list should not be null");
+    }
+
+    @Test
+    void stringTablePathCovered() {
+        EidolonConfig cfg = EidolonConfig.builder()
+                .enabled(true)
+                .collectStringTable(true)
+                .build();
+
+        MetricsService svc = new MetricsService(cfg);
+        MetricsSnapshot snap = svc.snapshot();
+
+        assertNotNull(snap.stringTable, "stringTable should not be null when collection is enabled");
+    }
+
+    @Test
+    void lifecycleInitShutdownDoesNotThrow() {
+        EidolonConfig cfg = EidolonConfig.builder()
+                .enabled(true)
+                .collectStringTable(false)
+                .build();
+
+        MetricsService svc = new MetricsService(cfg);
+        // Exercise @PostConstruct/@PreDestroy paths explicitly
+        svc.init();
+        svc.shutdown();
     }
 }
