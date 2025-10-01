@@ -1,5 +1,7 @@
 # Eidolon - JVM Introspection Plugin
 
+[![CI](https://github.com/itzamic/eidolon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/itzamic/eidolon/actions/workflows/ci.yml)
+
 Eidolon is a lightweight Java library and Java Agent that embeds a Micronaut HTTP/WebSocket server inside any JVM process to expose real-time metrics for live monitoring.
 
 Core features:
