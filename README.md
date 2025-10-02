@@ -16,12 +16,23 @@ Core features:
 
 --------------------------------------------------------------------------------
 
-1) Getting Started
-
 Security note: Eidolon endpoints are unauthenticated and intended for local development or protected environments. Do not expose them publicly without adding authentication/proxy controls.
 
+## Repository structure
+
+- Backend (library + agent): Micronaut HTTP/WS server exposing JVM metrics
+  - src/main/java/io/github/itzamic/eidolon
+- Frontend: Next.js 14 example dashboard to visualize live metrics
+  - frontend/
+- Sample app: minimal Java app to try Eidolon quickly (programmatic and agent modes)
+  - test/sample-app/
+
+--------------------------------------------------------------------------------
+
+## 1) Getting Started
+
 Option A: Run as Java Agent (no code changes)
-- Build/publish the library (see section 4).
+- Build/publish the library (see section 5).
 - Add the built JAR as a -javaagent to your JVM (application server, CLI app, etc.):
   -javaagent:/path/to/eidolon-0.1.0-SNAPSHOT.jar
 - Optional system properties:
@@ -34,11 +45,16 @@ Option A: Run as Java Agent (no code changes)
   -Deidolon.collect.stringTable=false
 
 Option B: Programmatic start (one line of code)
-- Add dependency (see section 4).
+- Add dependency (see section 5).
 - Start the embedded server early in your main or bootstrap:
   io.github.itzamic.eidolon.Eidolon.startDefault();
 
-2) Endpoints
+Stop the server programmatically if needed:
+- io.github.itzamic.eidolon.Eidolon.stop();
+
+--------------------------------------------------------------------------------
+
+## 2) Endpoints
 
 Base path: controlled by context-path (default /eidolon). The API lives under /api/metrics and WS under /ws/metrics.
 
@@ -57,74 +73,19 @@ Base path: controlled by context-path (default /eidolon). The API lives under /a
     - Messages:
       - "ping" -> responds "pong"
       - "snapshot" -> sends a fresh snapshot
+    - Periodic broadcast: when enabled (default true), snapshots are pushed on an interval. See eidolon.websocket.enabled and eidolon.websocket.interval.
 
 Default configuration:
 - Host: 0.0.0.0
 - Port: 7090
 - Context path: /eidolon
-- WebSocket broadcast interval: 1000 ms (configurable/disable by property)
+- WebSocket broadcast interval: 1000 ms (configurable / can be disabled)
 - GC event buffer size: 1024
 - String Table collection: disabled by default (enable with -Deidolon.collect.stringTable=true)
 
-3) What’s included
+--------------------------------------------------------------------------------
 
-- Embedded Micronaut server bootstrap (Eidolon class)
-- Programmatic config (EidolonConfig)
-- REST controllers (MetricsController)
-- Metrics collection service (MetricsService) using MXBeans and GC JMX notifications
-- WebSocket live feed + broadcast scheduler
-- Java Agent (EidolonAgent) to start without code changes
-- Gradle maven-publish configuration for easy distribution
-
-4) Build and Publish
-
-Build:
-- ./gradlew clean build -x test
-
-Publish to local Maven (so other projects can depend on it):
-- ./gradlew publishToMavenLocal
-
-The artifact coordinates default to:
-- groupId: io.github.itzamic
-- artifactId: eidolon
-- version: 0.1.0-SNAPSHOT
-
-Use in another Gradle project:
-repositories {
-  mavenLocal()
-  mavenCentral()
-}
-dependencies {
-  implementation("io.github.itzamic:eidolon:0.1.0-SNAPSHOT")
-}
-
-Run with the agent:
-- Add JVM arg:
-  -javaagent:$HOME/.m2/repository/io/github/itzamic/eidolon/0.1.0-SNAPSHOT/eidolon-0.1.0-SNAPSHOT.jar
-
-5) Configuration
-
-You can pass configuration either via:
-- Java system properties (-D...)
-- Programmatic builder using EidolonConfig.builder() and Eidolon.start(config)
-
-Supported keys (system properties) consumed by Eidolon (library):
-- eidolon.host (default 0.0.0.0)
-- eidolon.port (default 7090)
-- eidolon.contextPath (default /eidolon)
-- eidolon.websocket.enabled (true/false, default true)
-- eidolon.websocket.interval (milliseconds, default 1000)
-- eidolon.gc.bufferSize (int, default 1024)
-- eidolon.collect.stringTable (true/false, default false)
-
-Note: The sample app additionally uses the property eidolon.disableProgrammaticStart=true to avoid double-starting when running with -javaagent. This property is specific to the sample app’s main class and is not read by the library.
-
-Optional filters (programmatic-only for now):
-- includeMemoryPools(Set<String>)
-- includeGcNames(Set<String>)
-- includeThreadNamePrefixes(Set<String>)
-
-6) Data Model (JSON)
+## 3) Data Model (JSON)
 
 High-level shape of /api/metrics/snapshot:
 {
@@ -173,7 +134,9 @@ High-level shape of /api/metrics/snapshot:
   ]
 }
 
-7) Example client usage
+--------------------------------------------------------------------------------
+
+## 4) Example usage
 
 HTTP example (curl):
 - curl http://localhost:7090/eidolon/api/metrics/snapshot | jq
@@ -183,71 +146,132 @@ const sock = new WebSocket("ws://localhost:7090/eidolon/ws/metrics");
 sock.onopen = () => console.log("WS open");
 sock.onmessage = (ev) => console.log("metrics", JSON.parse(ev.data));
 
-8) Optional Next.js dashboard example (minimal snippet)
+--------------------------------------------------------------------------------
 
-Example page (app/page.tsx or pages/index.tsx) to show a live heap chart:
+## 5) Build and Publish
 
-"use client";
-import { useEffect, useRef, useState } from "react";
+Build:
+- ./gradlew clean build -x test
 
-export default function Home() {
-  const [points, setPoints] = useState<{ t: number, used: number }[]>([]);
-  const wsRef = useRef<WebSocket | null>(null);
+Publish to local Maven (so other projects can depend on it):
+- ./gradlew publishToMavenLocal
 
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:7090/eidolon/ws/metrics");
-    wsRef.current = ws;
-    ws.onmessage = (ev) => {
-      try {
-        const snap = JSON.parse(ev.data);
-        setPoints((prev) => [...prev.slice(-299), { t: snap.timestampMillis, used: snap.heap.used }]);
-      } catch {}
-    };
-    return () => ws.close();
-  }, []);
+The artifact coordinates default to:
+- groupId: io.github.itzamic
+- artifactId: eidolon
+- version: 0.1.0-SNAPSHOT
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Eidolon Heap Usage</h1>
-      <div>Points: {points.length}</div>
-      <svg width={600} height={200} style={{ border: "1px solid #ccc" }}>
-        {points.map((p, i) => {
-          const x = (i / 300) * 600;
-          const y = 200 - Math.min(200, (p.used / 100_000_000) * 200);
-          return <circle key={i} cx={x} cy={y} r={2} fill="teal" />;
-        })}
-      </svg>
-    </div>
-  );
+Use in another Gradle project:
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+dependencies {
+  implementation("io.github.itzamic:eidolon:0.1.0-SNAPSHOT")
 }
 
-9) Notes and Best Practices
+Run with the agent:
+- Add JVM arg:
+  -javaagent:$HOME/.m2/repository/io/github/itzamic/eidolon/0.1.0-SNAPSHOT/eidolon-0.1.0-SNAPSHOT.jar
 
-- Overhead is minimal: metrics are obtained via MXBeans and notifications; broadcast interval is configurable.
-- GC notifications are parsed reflectively from com.sun.management. If unavailable, GC events are skipped quietly.
-- StringTable MBean isn’t guaranteed across all JVMs; the code handles its absence gracefully.
-- Security: this ships without auth. Do not expose endpoints publicly without adding auth/proxy controls.
-- Modular design: the metrics service and transport layers are decoupled. Future extensions can add CPU/alloc profiling.
+--------------------------------------------------------------------------------
 
-10) Integration summary
+## 6) Configuration
 
-- As a dependency only: call Eidolon.startDefault(); OR run with -javaagent for no-code start.
-- As a Java Agent: best path to “automatic” start with zero code changes.
-- Configure via -D properties typed above.
+You can pass configuration either via:
+- Java system properties (-D...)
+- Programmatic builder using EidolonConfig.builder() and Eidolon.start(config)
 
-11) Development
+Supported keys (system properties) consumed by Eidolon:
+- eidolon.host (default 0.0.0.0)
+- eidolon.port (default 7090)
+- eidolon.contextPath (default /eidolon)
+- eidolon.websocket.enabled (true/false, default true)
+- eidolon.websocket.interval (milliseconds, default 1000)
+- eidolon.gc.bufferSize (int, default 1024)
+- eidolon.collect.stringTable (true/false, default false)
+
+Programmatic builder (extra optional filters are programmatic-only):
+- includeMemoryPools(Set<String>)
+- includeGcNames(Set<String>)
+- includeThreadNamePrefixes(Set<String>)
+
+Notes:
+- When websocket broadcast is disabled, clients still receive an initial snapshot on open and can request on-demand snapshots using the "snapshot" WS message.
+- The sample app additionally uses the property eidolon.disableProgrammaticStart=true to avoid double-starting when running with -javaagent. This property is specific to the sample app and is not read by the library itself.
+
+--------------------------------------------------------------------------------
+
+## 7) Frontend dashboard (Next.js) — included
+
+This repository includes a minimal dashboard that visualizes live metrics.
+
+Prerequisites:
+- Node.js 18+ (or 20+ recommended)
+- Backend running locally (see sections above or the sample app)
+
+Dev setup:
+1) Start a JVM with Eidolon on port 7090 and contextPath /eidolon (the defaults).
+2) In a new terminal:
+   cd frontend
+   npm install
+   npm run dev
+3) Open http://localhost:3000
+
+Configuration and rewrites:
+- The Next.js dev server proxies HTTP requests on /eidolon/* to http://localhost:7090/eidolon/* (see frontend/next.config.mjs).
+- WebSockets are NOT proxied by Next rewrites. The frontend connects directly by default to:
+  ws://localhost:7090/eidolon/ws/metrics
+- You can override endpoints via environment variables:
+  - NEXT_PUBLIC_EIDOLON_BASE (default: /eidolon) — HTTP base path relative to the frontend
+  - NEXT_PUBLIC_EIDOLON_WS_URL (default: ws://localhost:7090/eidolon/ws/metrics)
+
+Where things live:
+- Frontend pages/components live under frontend/src
+- Connection configuration is in frontend/src/lib/config.ts
+
+--------------------------------------------------------------------------------
+
+## 8) Sample app
+
+A minimal Java app is provided under test/sample-app to try Eidolon quickly.
+
+Publish Eidolon locally, then run one of:
+- Programmatic start (Eidolon.startDefault):
+  ./gradlew -p test/sample-app runProgrammatic
+- Agent mode (-javaagent, programmatic start disabled):
+  ./gradlew -p test/sample-app runAgent
+
+On startup you should see URLs like:
+- HTTP: http://localhost:7090/eidolon/api/metrics/snapshot
+- WS:   ws://localhost:7090/eidolon/ws/metrics
+
+See test/sample-app/README.md for more.
+
+--------------------------------------------------------------------------------
+
+## 9) Development notes
 
 - Build: ./gradlew build
+- Tests: ./gradlew test
+- Coverage report: ./gradlew jacocoTestReport
+  - HTML report: build/reports/jacocoHtml/index.html
 - Local publish: ./gradlew publishToMavenLocal
-- Test with a sample app:
-  - Add dependency implementation("io.github.itzamic:eidolon:0.1.0-SNAPSHOT")
-  - Add JVM arg: -javaagent:~/.m2/repository/io/github/itzamic/eidolon/0.1.0-SNAPSHOT/eidolon-0.1.0-SNAPSHOT.jar
-  - Open: http://localhost:7090/eidolon/api/metrics/snapshot
-  - WS: ws://localhost:7090/eidolon/ws/metrics
 
-Compatibility
+Implementation details:
+- Micronaut server configuration is set via ApplicationContext properties.
+- WebSocket periodic broadcast is provided by a simple ScheduledExecutorService (no Micronaut scheduler dependency) and gated by eidolon.websocket.enabled.
+- GC notifications are parsed reflectively from com.sun.management. If unavailable, GC events are skipped quietly.
+- StringTable MBean isn’t guaranteed across all JVMs; absence is handled gracefully.
+
+--------------------------------------------------------------------------------
+
+## 10) Compatibility
+
 - JDK: Built and tested with JDK 21 (Gradle toolchain enforces 21 by default).
 
 --------------------------------------------------------------------------------
 
-License: Apache-2.0 (default in POM; adjust as needed)
+## 11) License
+
+License: Apache-2.0 (configured in POM)
