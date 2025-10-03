@@ -60,3 +60,26 @@ export interface MetricsSnapshot {
 }
 
 export type HeapPoint = { t: number; used: number; max: number | null };
+
+export interface RuntimeInfo {
+  jvmName: string;
+  jvmVendor: string;
+  jvmVersion: string;
+  vmName: string;
+  vmVendor: string;
+  vmVersion: string;
+
+  gcCollectors: string[];
+  inputArguments: string[];
+
+  heapInit?: number | null;
+  heapMax?: number | null;
+
+  host: string;
+  port: number;
+  contextPath: string;
+  websocketEnabled: boolean;
+  websocketIntervalMillis: number;
+  gcEventBufferSize: number;
+  collectStringTable: boolean;
+}

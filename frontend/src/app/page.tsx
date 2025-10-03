@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { HeapPoint, MetricsSnapshot } from "@/lib/types";
+import type { HeapPoint, MetricsSnapshot, RuntimeInfo } from "@/lib/types";
 import { formatBytes, formatMillis, formatNumber, toFixed } from "@/lib/format";
-import { EIDOLON_WS_URL, SNAPSHOT_HTTP_URL } from "@/lib/config";
+import { EIDOLON_WS_URL, SNAPSHOT_HTTP_URL, RUNTIME_HTTP_URL } from "@/lib/config";
 import HeapChart from "@/components/HeapChart";
 import StatCard from "@/components/StatCard";
 
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [err, setErr] = useState<string | null>(null);
   const [snap, setSnap] = useState<MetricsSnapshot | null>(null);
   const [points, setPoints] = useState<HeapPoint[]>([]);
+  const [runtime, setRuntime] = useState<RuntimeInfo | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   // Initial HTTP fetch (in case WS is disabled or connecting)
@@ -44,7 +45,26 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, []);
-
+  
+  // Initial runtime info fetch
+  useEffect(() => {
+    let cancelled = false;
+    fetch(RUNTIME_HTTP_URL)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<RuntimeInfo>;
+      })
+      .then((info) => {
+        if (!cancelled) setRuntime(info);
+      })
+      .catch(() => {
+        // ignore
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  
   const onMessage = useCallback((ev: MessageEvent) => {
     try {
       // Server may also send "pong" (string), so guard JSON parsing
@@ -251,6 +271,69 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Runtime options */}
+      <div className="panel" style={{ marginTop: 16 }}>
+        <div className="label">Runtime Options</div>
+        <div style={{ overflowX: "auto", marginTop: 8 }}>
+          <table className="table">
+            <tbody>
+              <tr>
+                <th>VM</th>
+                <td>{runtime ? `${runtime.vmName} ${runtime.vmVersion}` : "—"}</td>
+              </tr>
+              <tr>
+                <th>JVM</th>
+                <td>{runtime ? `${runtime.jvmName} ${runtime.jvmVersion}` : "—"}</td>
+              </tr>
+              <tr>
+                <th>GC Collectors</th>
+                <td>{runtime?.gcCollectors?.join(", ") ?? "—"}</td>
+              </tr>
+              <tr>
+                <th>Heap Init</th>
+                <td>{formatBytes(runtime?.heapInit ?? null)}</td>
+              </tr>
+              <tr>
+                <th>Heap Max</th>
+                <td>{formatBytes(runtime?.heapMax ?? null)}</td>
+              </tr>
+              <tr>
+                <th>Context Path</th>
+                <td>{runtime?.contextPath ?? "—"}</td>
+              </tr>
+              <tr>
+                <th>Port</th>
+                <td>{formatNumber(runtime?.port ?? null)}</td>
+              </tr>
+              <tr>
+                <th>WebSocket Enabled</th>
+                <td>{runtime?.websocketEnabled ? "true" : "false"}</td>
+              </tr>
+              <tr>
+                <th>WS Interval</th>
+                <td>{runtime ? `${formatNumber(runtime.websocketIntervalMillis)} ms` : "—"}</td>
+              </tr>
+              <tr>
+                <th>GC Event Buffer</th>
+                <td>{formatNumber(runtime?.gcEventBufferSize ?? null)}</td>
+              </tr>
+              <tr>
+                <th>Collect StringTable</th>
+                <td>{runtime?.collectStringTable ? "true" : "false"}</td>
+              </tr>
+              <tr>
+                <th>JVM Args</th>
+                <td>
+                  <div style={{ maxWidth: 600, whiteSpace: "pre-wrap", overflowX: "auto" }} className="subtle">
+                    {runtime?.inputArguments?.join(" ") ?? "—"}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
